@@ -1,0 +1,52 @@
+﻿name: Name
+description: Description
+author: victorx64
+inputs:
+  season-start:
+    description: Current season start date ("yyyy-MM-dd"). Can be in future.
+    default: "2023-04-17"
+    required: false
+  git-pathspec:
+    description: Pattern used to limit paths. See https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
+    required: false
+  min-additions:
+    description: Required number of additions to count a PR. After update, also update `season-start`.
+    required: false
+    default: "1"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/cache@v3
+      if: github.event_name == 'push'
+      with:
+        path: ${{ github.action_path }}/ui/devrating.sqlite3
+        key: devrating-${{ inputs.season-start }}.sqlite3-${{ github.run_id }}
+        restore-keys: |
+          devrating-${{ inputs.season-start }}.sqlite3-
+    - uses: actions/checkout@v3
+      if: github.event_name == 'push'
+      with:
+        fetch-depth: 0
+    - run: |
+        dotnet run --project ${{ github.action_path }}/src/Action.csproj -- `
+        '${{ github.repository }}' `
+        '${{ github.token }}' `
+        '${{ github.workspace }}' `
+        '${{ github.ref_name }}' `
+        '${{ github.action_path }}/ui/devrating.sqlite3' `
+        '${{ github.sha }}' `
+        '${{ inputs.min-additions }}' `
+        '${{ inputs.season-start }}' `
+        ${{ inputs.git-pathspec }}
+      if: github.event_name == 'push'
+      shell: pwsh
+    - uses: actions/upload-pages-artifact@v1.0.8
+      if: github.event_name == 'push'
+      with:
+        path: ${{ github.action_path }}/ui/
+        retention-days: 7
+
+branding:
+  icon: shopping-cart
+  color: red
