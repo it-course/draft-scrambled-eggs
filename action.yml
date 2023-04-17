@@ -24,6 +24,7 @@ runs:
         key: devrating-${{ inputs.season-start }}.sqlite3-${{ github.run_id }}
         restore-keys: |
           devrating-${{ inputs.season-start }}.sqlite3-
+          devrating.sqlite3-
     - uses: actions/checkout@v3
       if: github.event_name == 'push'
       with:
